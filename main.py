@@ -2,64 +2,95 @@ import sys
 import webbrowser
 
 from PyQt5 import QtGui
+from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QPushButton, QLabel, QSpinBox, \
-    QTableWidget
+    QTableWidget, QComboBox, QHBoxLayout
 
+PADDING = 10
 
-class SecondWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.spinbox_columns = QSpinBox(self)
-        self.spinbox_rows = QSpinBox(self)
-        self.table = QTableWidget(self)
+ELEMENT_SIZE = QSize(150, 30)
+LONG_ELEMENT_SIZE = QSize(210, 30)
+WINDOW_SIZE = QSize(800, 800)
+INPUT_CONTAINER_SIZE = QSize(WINDOW_SIZE.width() - 2 * PADDING, 400)
 
-        self.font = QtGui.QFont("ttf", 16)
-        self.init_ui()
-
-    def init_ui(self):
-        self.setFixedSize(400, 400)
-        self.setWindowTitle("Determinant Example")
+INPUT_MODES = ["Матрицы", "Уравнения"]
+RUN_MODES = ["Обратная матрица", "Гаусс", "Крамор"]
 
 
 class MainWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.text = QTextEdit(self)
-        self.new_page_button = QPushButton(self)
+        self.input_mode_label = QLabel(self)
         self.link_to_documentation = QPushButton(self)
-        self.label = QLabel(self)
+        self.link_to_github = QPushButton(self)
+        self.mode_setter = QComboBox(self)
+        self.run_mode_setter = QComboBox(self)
+        self.run_button = QPushButton(self)
+        # self.input_frame = QtGui.QFrame()
 
         self.font = QtGui.QFont("ttf", 16)  # устанавливаем шрифт
         self.init_ui()
 
+    # инициализация графических компонентов
     def init_ui(self):
-        self.setFixedSize(800, 800)  # задаём размеры окна
-        self.setWindowTitle("PyQt5 Example")
+        self.setFixedSize(WINDOW_SIZE)  # задаём размеры окна
+        self.setWindowTitle("PyQt5 Example")  # задаём название окна
 
-        self.text.setFont(self.font)
-
-        self.new_page_button.setFont(self.font)
-        self.new_page_button.setText("To table page")
-        self.new_page_button.resize(150, 40)
-        self.new_page_button.move(170, 10)
-        self.new_page_button.clicked.connect(self.redirect_to_second_page)
-
+        # Кнопка с документацией
         self.link_to_documentation.setFont(self.font)
-        self.link_to_documentation.setText("Documentation")
-        self.link_to_documentation.resize(150, 40)
-        self.link_to_documentation.move(10, 10)
-        self.link_to_documentation.clicked.connect(self.redirect_to_website)
+        self.link_to_documentation.setText("Документация")
+        self.link_to_documentation.resize(ELEMENT_SIZE)
+        self.link_to_documentation.move(PADDING, WINDOW_SIZE.height() - PADDING - ELEMENT_SIZE.height())
+        self.link_to_documentation.clicked.connect(lambda: self.redirect_to_website("https://doc.qt.io/qtforpython-5/"))
 
-        self.label.setFont(self.font)
-        self.label.setText("Lable example")
+        # Кнопка с гитхабом
+        self.link_to_github.setFont(self.font)
+        self.link_to_github.setText("Github")
+        self.link_to_github.resize(ELEMENT_SIZE)
+        self.link_to_github.move(2 * PADDING + ELEMENT_SIZE.width(),
+                                 WINDOW_SIZE.height() - PADDING - ELEMENT_SIZE.height())
+        self.link_to_github.clicked.connect(
+            lambda: self.redirect_to_website("https://github.com/FelixDes/PyQt_Example"))
 
-    def redirect_to_second_page(self):
-        self.second_page = SecondWidget()
-        self.second_page.show()
+        # Лейбл под метод ввода
+        self.input_mode_label.setFont(self.font)
+        self.input_mode_label.setText("Метод ввода:")
+        self.input_mode_label.resize(ELEMENT_SIZE)
+        self.input_mode_label.move(PADDING, PADDING)
 
-    def redirect_to_website(self):
-        webbrowser.open("https://doc.qt.io/qtforpython-5/")
+        # Выбор метода ввода
+        self.mode_setter.setFont(self.font)
+        self.mode_setter.addItems(INPUT_MODES)
+        self.mode_setter.activated[str].connect(self.onChecked)
+        self.mode_setter.resize(ELEMENT_SIZE)
+        self.mode_setter.move(2 * PADDING + ELEMENT_SIZE.width(), PADDING)
+
+        # Выбор метода расчёта
+        self.run_mode_setter.setFont(self.font)
+        self.run_mode_setter.addItems(RUN_MODES)
+        self.run_mode_setter.activated[str].connect(self.onRun)
+        self.run_mode_setter.resize(LONG_ELEMENT_SIZE)
+        self.run_mode_setter.move(PADDING, 3 * PADDING + INPUT_CONTAINER_SIZE.height())
+
+        # Запуск расчёта
+        self.run_button.setFont(self.font)
+        self.run_button.setText("Решить")
+        self.run_button.resize(ELEMENT_SIZE)
+        self.run_button.move(2 * PADDING + LONG_ELEMENT_SIZE.width(), 3 * PADDING + INPUT_CONTAINER_SIZE.height())
+        # self.run_button.clicked.connect(
+        #     lambda: self.redirect_to_website("https://github.com/FelixDes/PyQt_Example"))
+
+    def redirect_to_website(self, url):
+        webbrowser.open(url)
+
+    def onChecked(self, mode):
+        pass
+
+    def onRun(self, mode):
+        pass
+
+    # def setFill
 
 
 if __name__ == '__main__':
