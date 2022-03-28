@@ -78,7 +78,7 @@ class MainWidget(QWidget):
         self.init_ui()
 
         self.set_listeners()
-        self.table_result.setEditTriggers(QTableWidget.NoEditTriggers)  # запрет на изменение таблицы с результатом
+        self.set_only_read_mode_to_table(self.table_result)
         self.set_only_numeric_input_to_tables()
 
     # настройка графических элементов
@@ -107,7 +107,8 @@ class MainWidget(QWidget):
 
         # Таблица под ответ
         self.table_result.resize(INPUT_CONTAINER_SIZE)
-        self.table_result.move(PADDING, 4 * PADDING + ELEMENT_SIZE.height() + INPUT_CONTAINER_SIZE.height() + LONG_ELEMENT_SIZE.height())
+        self.table_result.move(PADDING,
+                               4 * PADDING + ELEMENT_SIZE.height() + INPUT_CONTAINER_SIZE.height() + LONG_ELEMENT_SIZE.height())
 
         # Выбор метода расчёта
         self.run_mode_setter.setFont(self.font)
@@ -139,6 +140,10 @@ class MainWidget(QWidget):
         delegate_numeric_to_table(self.table_left_values)
         delegate_numeric_to_table(self.table_right_values)
 
+    # запрет на изменение таблицы с результатом
+    def set_only_read_mode_to_table(self, table):
+        table.setEditTriggers(QTableWidget.NoEditTriggers)
+
     def set_listeners(self):
         self.number_of_cols_spinner.valueChanged.connect(lambda x: self.change_number_of_cols(x))
         self.run_button.clicked.connect(self.on_run)
@@ -161,17 +166,21 @@ class MainWidget(QWidget):
     def on_run(self):
         left_values = self.get_element_list_from_table(self.table_left_values)
         right_values = self.get_element_list_from_table(self.table_right_values)
+
         m_solver = MatrixSolver(left_values, right_values)
+
         match self.run_mode_setter.currentIndex():
             case 0:
                 result_values = m_solver.solve_for_opposite_matrix_method()
-                print("op")
             case 1:
                 result_values = m_solver.solve_for_gauss_method()
-                print('g')
             case 2:
                 result_values = m_solver.solve_for_kramor_method()
-                print("k")
+
+        self.put_elements_to_table_from_list(self.table_result, result_values)
+
+    def put_elements_to_table_from_list(self, table, lst):
+        pass
 
     def get_element_list_from_table(self, table):
         return []
