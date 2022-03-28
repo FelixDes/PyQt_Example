@@ -13,7 +13,7 @@ PADDING = 10
 ELEMENT_SIZE = QSize(150, 30)
 LONG_ELEMENT_SIZE = QSize(210, 30)
 WINDOW_SIZE = QSize(800, 800)
-INPUT_CONTAINER_SIZE = QSize(WINDOW_SIZE.width() // 2 - 2 * PADDING, 400)
+INPUT_CONTAINER_SIZE = QSize(WINDOW_SIZE.width() // 2 - 2 * PADDING, 325)
 
 RUN_MODES = ["Обратная матрица", "Гаусс", "Крамор"]
 
@@ -54,6 +54,11 @@ class NumericDelegate(QStyledItemDelegate):
         return editor
 
 
+def delegate_numeric_to_table(table):
+    delegate = NumericDelegate(table)
+    table.setItemDelegate(delegate)
+
+
 class MainWidget(QWidget):
     font = QtGui.QFont("ttf", 16)  # устанавливаем шрифт
 
@@ -68,10 +73,12 @@ class MainWidget(QWidget):
         self.run_button = QPushButton(self)
         self.table_left_values = QTableWidget(self)
         self.table_right_values = QTableWidget(self)
+        self.table_result = QTableWidget(self)
 
         self.init_ui()
 
         self.set_listeners()
+        self.table_result.setEditTriggers(QTableWidget.NoEditTriggers)  # запрет на изменение таблицы с результатом
         self.set_only_numeric_input_to_tables()
 
     # настройка графических элементов
@@ -79,7 +86,7 @@ class MainWidget(QWidget):
         self.setFixedSize(WINDOW_SIZE)  # задаём размеры окна
         self.setWindowTitle("PyQt5 Example")  # задаём название окна
 
-        # Лейбл под кол-во строк/столбцов
+        # Поле под кол-во строк/столбцов
         self.number_of_cols_label.setFont(self.font)
         self.number_of_cols_label.setText("Размер:")
         self.number_of_cols_label.resize(ELEMENT_SIZE)
@@ -97,6 +104,10 @@ class MainWidget(QWidget):
         # Таблица под левые значения
         self.table_right_values.resize(INPUT_CONTAINER_SIZE)
         self.table_right_values.move(2 * PADDING + INPUT_CONTAINER_SIZE.width(), 2 * PADDING + ELEMENT_SIZE.height())
+
+        # Таблица под ответ
+        self.table_result.resize(INPUT_CONTAINER_SIZE)
+        self.table_result.move(PADDING, 4 * PADDING + ELEMENT_SIZE.height() + INPUT_CONTAINER_SIZE.height() + LONG_ELEMENT_SIZE.height())
 
         # Выбор метода расчёта
         self.run_mode_setter.setFont(self.font)
@@ -125,10 +136,8 @@ class MainWidget(QWidget):
                                  WINDOW_SIZE.height() - PADDING - ELEMENT_SIZE.height())
 
     def set_only_numeric_input_to_tables(self):
-        delegate1 = NumericDelegate(self.table_left_values)
-        self.table_left_values.setItemDelegate(delegate1)
-        delegate2 = NumericDelegate(self.table_right_values)
-        self.table_right_values.setItemDelegate(delegate2)
+        delegate_numeric_to_table(self.table_left_values)
+        delegate_numeric_to_table(self.table_right_values)
 
     def set_listeners(self):
         self.number_of_cols_spinner.valueChanged.connect(lambda x: self.change_number_of_cols(x))
@@ -141,19 +150,31 @@ class MainWidget(QWidget):
         webbrowser.open(url)
 
     def change_number_of_cols(self, number):
-        self.table_left_values.setRowCount(number)
-        self.table_left_values.setColumnCount(number)
-        self.table_right_values.setRowCount(number)
-        self.table_right_values.setColumnCount(1)
+        self.set_sizes_of_table(self.table_left_values, number, number)
+        self.set_sizes_of_table(self.table_right_values, number, 1)
+        self.set_sizes_of_table(self.table_result, number, number)
+
+    def set_sizes_of_table(self, table, row, column):
+        table.setRowCount(row)
+        table.setColumnCount(column)
 
     def on_run(self):
         left_values = self.get_element_list_from_table(self.table_left_values)
         right_values = self.get_element_list_from_table(self.table_right_values)
-        m_solver = MatrixSolver()
-        # result_values = m_solver.
+        m_solver = MatrixSolver(left_values, right_values)
+        match self.run_mode_setter.currentIndex():
+            case 0:
+                result_values = m_solver.solve_for_opposite_matrix_method()
+                print("op")
+            case 1:
+                result_values = m_solver.solve_for_gauss_method()
+                print('g')
+            case 2:
+                result_values = m_solver.solve_for_kramor_method()
+                print("k")
 
     def get_element_list_from_table(self, table):
-        pass
+        return []
 
 
 if __name__ == '__main__':
