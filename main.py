@@ -2,11 +2,11 @@ import sys
 import webbrowser
 from enum import Enum
 
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QSize, QRegExp
 from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QPushButton, QLabel, QSpinBox, \
-    QTableWidget, QComboBox, QStyledItemDelegate, QLineEdit
+    QTableWidget, QComboBox, QStyledItemDelegate, QLineEdit, QTableWidgetItem
 
 PADDING = 10
 
@@ -35,7 +35,7 @@ class MatrixSolver:
         self.right_values = right_values
 
     def solve_for_opposite_matrix_method(self):
-        pass
+        return self.multiply(self.get_opposite_table(self.left_values), self.right_values)
 
     def solve_for_gauss_method(self):
         pass
@@ -43,12 +43,60 @@ class MatrixSolver:
     def solve_for_kramor_method(self):
         pass
 
+    def multiply(self, table1, table2):
+        result_matrix = [[0 for _ in range(len(table2[0]))] for _ in range(len(table1))]
+        for i in range(len(table1)):
+            for j in range(len(table2[0])):
+                for k in range(len(table2)):
+                    result_matrix[i][j] += table1[i][k] * table2[k][j]
+        return result_matrix
+
+    def get_table_no_point(self, input_table, i_n, j_n):
+        table_res = []
+        for i in range(len(input_table) - 1):
+            table_row = []
+            for j in range(len(input_table) - 1):
+                table_row.append(input_table[i if i < i_n else i + 1][j if j < j_n else j + 1])
+            if bool(table_row):
+                table_res.append(table_row)
+        return table_res
+
+    def reverse(self, input_table):
+        table_res = []
+        for i in range(len(input_table)):
+            table_row = []
+            for j in range(len(input_table)):
+                table_row.append(input_table[j][i])
+            table_res.append(table_row)
+        return table_res
+
+    def get_det(self, input_table):
+        if len(input_table) == 1:
+            return input_table[0][0]
+        sum = 0
+        for i in range(len(input_table)):
+            sum += input_table[i][0] * (-1 if i % 2 != 0 else 1) * self.get_det(
+                self.get_table_no_point(input_table, i, 0))
+        return sum
+
+    def get_opposite_table(self, input_table):
+        input_table = self.reverse(input_table)
+        table_res = []
+        det = self.get_det(input_table)
+        for i in range(len(input_table)):
+            table_row = []
+            for j in range(len(input_table)):
+                table_row.append(
+                    (-1 if (i + j) % 2 != 0 else 1) * self.get_det(self.get_table_no_point(input_table, i, j)) / det)
+            table_res.append(table_row)
+        return table_res
+
 
 class NumericDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         editor = super(NumericDelegate, self).createEditor(parent, option, index)
         if isinstance(editor, QLineEdit):
-            reg_ex = QRegExp("[0-9]+.?[0-9]{,2}")
+            reg_ex = QRegExp("([+-]?\d+(?:\.\d+)?)")
             validator = QRegExpValidator(reg_ex, editor)
             editor.setValidator(validator)
         return editor
@@ -157,7 +205,7 @@ class MainWidget(QWidget):
     def change_number_of_cols(self, number):
         self.set_sizes_of_table(self.table_left_values, number, number)
         self.set_sizes_of_table(self.table_right_values, number, 1)
-        self.set_sizes_of_table(self.table_result, number, number)
+        self.set_sizes_of_table(self.table_result, number, 1)
 
     def set_sizes_of_table(self, table, row, column):
         table.setRowCount(row)
@@ -166,6 +214,10 @@ class MainWidget(QWidget):
     def on_run(self):
         left_values = self.get_element_list_from_table(self.table_left_values)
         right_values = self.get_element_list_from_table(self.table_right_values)
+
+        self.table_result.clear()
+
+        result_values = list()
 
         m_solver = MatrixSolver(left_values, right_values)
 
@@ -180,10 +232,18 @@ class MainWidget(QWidget):
         self.put_elements_to_table_from_list(self.table_result, result_values)
 
     def put_elements_to_table_from_list(self, table, lst):
-        pass
+        for i in range(len(lst)):
+            for j in range(len(lst[0])):
+                table.setItem(i, j, QTableWidgetItem("{:10.4f}".format(lst[i][j])))
 
     def get_element_list_from_table(self, table):
-        return []
+        lst = list()
+        for i in range(table.rowCount()):
+            sub_lst = list()
+            for j in range(table.columnCount()):
+                sub_lst.append(float(table.item(i, j).text()))
+            lst.append(sub_lst)
+        return lst
 
 
 if __name__ == '__main__':
