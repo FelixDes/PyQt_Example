@@ -5,7 +5,7 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import QSize, QRegExp
 from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QSpinBox, \
-    QTableWidget, QComboBox, QStyledItemDelegate, QLineEdit, QTableWidgetItem
+    QTableWidget, QComboBox, QStyledItemDelegate, QLineEdit, QTableWidgetItem, QDialog
 
 PADDING = 10
 
@@ -15,6 +15,8 @@ WINDOW_SIZE = QSize(800, 800)
 INPUT_CONTAINER_SIZE = QSize(WINDOW_SIZE.width() // 2 - 2 * PADDING, 325)
 
 RUN_MODES = ["Обратная матрица", "Крамер", "Гаусс"]
+
+EXIT_CODES = ["OK", "NO_SOLUTIONS", "ENDLESS"]
 
 
 def main():
@@ -35,34 +37,22 @@ class MatrixSolver:
 
     # Метод обратной матрицы
     def solve_for_opposite_matrix_method(self):
+        if self.get_det(self.left_values) == 0:
+            return [[0] for _ in range(len(self.left_values))]
         return self.multiply(self.get_opposite_table(self.left_values), self.right_values)
 
     # Метод Крамера
     def solve_for_kramer_method(self):
+        if self.get_det(self.left_values) == 0:
+            return [[0] for _ in range(len(self.left_values))]
         lst = list()
         det = self.get_det(self.left_values)
         for i in range(len(self.left_values[0])):
             lst.append([self.get_det(self.get_matrix_for_kramer(i)) / det])
         return lst
 
-    # Метод Гаусса
-    def solve_for_gauss_method(self):
-        pass
-        # res = [[0] * len(self.left_values)]
-        # for i1 in range(len(self.left_values)):
-        #     for i2 in range(i1 + 1, len(self.left_values)):
-        #         self.change_for_zero(i1, i2, i1)
-        #
-        # for i in range(len(self.left_values) - 1, 0, -1):
-        #     for j in range(len(self.left_values) - 1, 0, -1):
+        # Получаем матрицу, состающую из левой, в которой на место столбца index поставлена правая матрица
 
-    # def change_for_zero(self, i1, i2, j):
-    #     coef = -self.left_values[i1][j] / self.left_values[i2][j]
-    #     self.right_values[i2][0] = self.right_values[i2][0] * coef + self.right_values[i1][0]
-    #     for i in range(j, len(self.left_values)):
-    #         self.left_values[i2][i] = self.left_values[i2][i] * coef + self.left_values[i1][i]
-
-    # Получаем матрицу, состающую из левой, в которой на место столбца index поставлена правая матрица
     def get_matrix_for_kramer(self, index):
         lst = list(list())
         for i in range(len(self.left_values)):
@@ -74,6 +64,32 @@ class MatrixSolver:
                     sub_lst.append(self.left_values[i][j])
             lst.append(sub_lst)
         return lst
+
+    # Метод Гаусса
+    def solve_for_gauss_method(self):
+        if self.get_det(self.left_values) == 0:
+            return [[0] for _ in range(len(self.left_values))]
+        res = [[0] for _ in range(len(self.left_values))]
+        # Приводим матрицу к верхнедиагональному виду
+        for i in range(len(self.left_values)):
+            for j in range(i + 1, len(self.left_values)):
+                self.make_zero_started_string(i, j, i)
+
+        res[len(self.left_values) - 1][0] = self.right_values[len(self.left_values) - 1][0] / \
+                                            self.left_values[len(self.left_values) - 1][len(self.left_values) - 1]
+
+        for i in range(len(self.left_values) - 2, -1, -1):
+            for j in range(i + 1, len(self.left_values)):
+                self.right_values[i][0] -= self.left_values[i][j] * res[j][0]
+            res[i][0] = self.right_values[i][0] / self.left_values[i][i]
+        return res
+
+    # Приводим строку с индексом i2 к нулям с индекса j складывая со строкой i1 с коефициентом
+    def make_zero_started_string(self, i1, i2, j):
+        coef = -self.left_values[i1][j] / self.left_values[i2][j]
+        self.right_values[i2][0] = self.right_values[i2][0] * coef + self.right_values[i1][0]
+        for i in range(j, len(self.left_values)):
+            self.left_values[i2][i] = self.left_values[i2][i] * coef + self.left_values[i1][i]
 
     # Умножение матриц
     @staticmethod
@@ -147,7 +163,6 @@ def delegate_numeric_to_table(table):
     table.setItemDelegate(delegate)
 
 
-# Класс графической формы
 class MainWidget(QWidget):
     font = QtGui.QFont("ttf", 16)  # устанавливаем шрифт
 
@@ -164,16 +179,19 @@ class MainWidget(QWidget):
         self.table_right_values = QTableWidget(self)
         self.table_result = QTableWidget(self)
 
-        self.init_ui()
+        self.set_ui_and_Listeners()
 
+    def set_ui_and_Listeners(self):
+        self.init_ui()
         self.set_listeners()
+        self.number_of_cols_spinner.setMinimum(2)
         self.set_only_read_mode_to_table(self.table_result)
         self.set_only_numeric_input_to_tables()
 
     # настройка графических элементов
     def init_ui(self):
         self.setFixedSize(WINDOW_SIZE)  # задаём размеры окна
-        self.setWindowTitle("PyQt5 Example")  # задаём название окна
+        self.setWindowTitle("PyQt5 Matrix Example")  # задаём название окна
 
         # Поле под кол-во строк/столбцов
         self.number_of_cols_label.setFont(self.font)
@@ -254,6 +272,7 @@ class MainWidget(QWidget):
 
     # Запустить решение с выбранным методом
     def on_run(self):
+        self.fill_nulls_cells_for_zeroes()
         left_values = self.get_element_list_from_table(self.table_left_values)
         right_values = self.get_element_list_from_table(self.table_right_values)
 
@@ -273,13 +292,23 @@ class MainWidget(QWidget):
 
         self.put_elements_to_table_from_list(self.table_result, result_values)
 
-    # Получить данные из QTableWidget
+    def check_table_for_empty_cells_and_fill_them_with_zeroes(self, table):
+        for i in range(table.rowCount()):
+            for j in range(table.columnCount()):
+                if not (table.item(i, j) is not None) or not (table.item(i, j).text() != ''):
+                    table.setItem(i, j, QTableWidgetItem("0"))
+
+    def fill_nulls_cells_for_zeroes(self):
+        self.check_table_for_empty_cells_and_fill_them_with_zeroes(self.table_left_values)
+        self.check_table_for_empty_cells_and_fill_them_with_zeroes(self.table_right_values)
+
+    # Записать данные в QTableWidget
     def put_elements_to_table_from_list(self, table, lst):
         for i in range(len(lst)):
             for j in range(len(lst[0])):
                 table.setItem(i, j, QTableWidgetItem("{:10.4f}".format(lst[i][j])))
 
-
+    # Получить данные из QTableWidget
     def get_element_list_from_table(self, table):
         lst = list()
         for i in range(table.rowCount()):
