@@ -1,11 +1,10 @@
 import sys
 import webbrowser
-from enum import Enum
 
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui
 from PyQt5.QtCore import QSize, QRegExp
 from PyQt5.QtGui import QRegExpValidator
-from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QPushButton, QLabel, QSpinBox, \
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QSpinBox, \
     QTableWidget, QComboBox, QStyledItemDelegate, QLineEdit, QTableWidgetItem
 
 PADDING = 10
@@ -15,7 +14,7 @@ LONG_ELEMENT_SIZE = QSize(210, 30)
 WINDOW_SIZE = QSize(800, 800)
 INPUT_CONTAINER_SIZE = QSize(WINDOW_SIZE.width() // 2 - 2 * PADDING, 325)
 
-RUN_MODES = ["Обратная матрица", "Гаусс", "Крамор"]
+RUN_MODES = ["Обратная матрица", "Крамер", "Гаусс"]
 
 
 def main():
@@ -25,7 +24,7 @@ def main():
     sys.exit(app.exec())
 
 
-# класс для выполнения математических операций
+# Класс для выполнения математических операций
 class MatrixSolver:
     left_values = list(list())
     right_values = list()
@@ -34,16 +33,51 @@ class MatrixSolver:
         self.left_values = left_values
         self.right_values = right_values
 
+    # Метод обратной матрицы
     def solve_for_opposite_matrix_method(self):
         return self.multiply(self.get_opposite_table(self.left_values), self.right_values)
 
+    # Метод Крамера
+    def solve_for_kramer_method(self):
+        lst = list()
+        det = self.get_det(self.left_values)
+        for i in range(len(self.left_values[0])):
+            lst.append([self.get_det(self.get_matrix_for_kramer(i)) / det])
+        return lst
+
+    # Метод Гаусса
     def solve_for_gauss_method(self):
         pass
+        # res = [[0] * len(self.left_values)]
+        # for i1 in range(len(self.left_values)):
+        #     for i2 in range(i1 + 1, len(self.left_values)):
+        #         self.change_for_zero(i1, i2, i1)
+        #
+        # for i in range(len(self.left_values) - 1, 0, -1):
+        #     for j in range(len(self.left_values) - 1, 0, -1):
 
-    def solve_for_kramor_method(self):
-        pass
+    # def change_for_zero(self, i1, i2, j):
+    #     coef = -self.left_values[i1][j] / self.left_values[i2][j]
+    #     self.right_values[i2][0] = self.right_values[i2][0] * coef + self.right_values[i1][0]
+    #     for i in range(j, len(self.left_values)):
+    #         self.left_values[i2][i] = self.left_values[i2][i] * coef + self.left_values[i1][i]
 
-    def multiply(self, table1, table2):
+    # Получаем матрицу, состающую из левой, в которой на место столбца index поставлена правая матрица
+    def get_matrix_for_kramer(self, index):
+        lst = list(list())
+        for i in range(len(self.left_values)):
+            sub_lst = list()
+            for j in range(len(self.left_values[0])):
+                if j == index:
+                    sub_lst.append(self.right_values[i][0])
+                else:
+                    sub_lst.append(self.left_values[i][j])
+            lst.append(sub_lst)
+        return lst
+
+    # Умножение матриц
+    @staticmethod
+    def multiply(table1, table2):
         result_matrix = [[0 for _ in range(len(table2[0]))] for _ in range(len(table1))]
         for i in range(len(table1)):
             for j in range(len(table2[0])):
@@ -51,7 +85,9 @@ class MatrixSolver:
                     result_matrix[i][j] += table1[i][k] * table2[k][j]
         return result_matrix
 
-    def get_table_no_point(self, input_table, i_n, j_n):
+    # Получить матрицу без ряда i_n и строки j_n
+    @staticmethod
+    def get_table_no_point(input_table, i_n, j_n):
         table_res = []
         for i in range(len(input_table) - 1):
             table_row = []
@@ -61,7 +97,9 @@ class MatrixSolver:
                 table_res.append(table_row)
         return table_res
 
-    def reverse(self, input_table):
+    # Транспонирование матрицы
+    @staticmethod
+    def reverse(input_table):
         table_res = []
         for i in range(len(input_table)):
             table_row = []
@@ -70,6 +108,7 @@ class MatrixSolver:
             table_res.append(table_row)
         return table_res
 
+    # Найти определитель матрицы
     def get_det(self, input_table):
         if len(input_table) == 1:
             return input_table[0][0]
@@ -79,6 +118,7 @@ class MatrixSolver:
                 self.get_table_no_point(input_table, i, 0))
         return sum
 
+    # найти обратную матрицу
     def get_opposite_table(self, input_table):
         input_table = self.reverse(input_table)
         table_res = []
@@ -107,6 +147,7 @@ def delegate_numeric_to_table(table):
     table.setItemDelegate(delegate)
 
 
+# Класс графической формы
 class MainWidget(QWidget):
     font = QtGui.QFont("ttf", 16)  # устанавливаем шрифт
 
@@ -211,6 +252,7 @@ class MainWidget(QWidget):
         table.setRowCount(row)
         table.setColumnCount(column)
 
+    # Запустить решение с выбранным методом
     def on_run(self):
         left_values = self.get_element_list_from_table(self.table_left_values)
         right_values = self.get_element_list_from_table(self.table_right_values)
@@ -225,16 +267,18 @@ class MainWidget(QWidget):
             case 0:
                 result_values = m_solver.solve_for_opposite_matrix_method()
             case 1:
-                result_values = m_solver.solve_for_gauss_method()
+                result_values = m_solver.solve_for_kramer_method()
             case 2:
-                result_values = m_solver.solve_for_kramor_method()
+                result_values = m_solver.solve_for_gauss_method()
 
         self.put_elements_to_table_from_list(self.table_result, result_values)
 
+    # Получить данные из QTableWidget
     def put_elements_to_table_from_list(self, table, lst):
         for i in range(len(lst)):
             for j in range(len(lst[0])):
                 table.setItem(i, j, QTableWidgetItem("{:10.4f}".format(lst[i][j])))
+
 
     def get_element_list_from_table(self, table):
         lst = list()
