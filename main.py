@@ -47,20 +47,27 @@ class MatrixSolver:
 
     # Метод Гаусса
     def solve_for_gauss_method(self):
-        pass
-        # res = [[0] * len(self.left_values)]
-        # for i1 in range(len(self.left_values)):
-        #     for i2 in range(i1 + 1, len(self.left_values)):
-        #         self.change_for_zero(i1, i2, i1)
-        #
-        # for i in range(len(self.left_values) - 1, 0, -1):
-        #     for j in range(len(self.left_values) - 1, 0, -1):
+        res = [[0] for _ in range(len(self.left_values))]
+        # Приводим матрицу к верхнедиагональному виду
+        for i in range(len(self.left_values)):
+            for j in range(i + 1, len(self.left_values)):
+                self.make_zero_started_string(i, j, i)
 
-    # def change_for_zero(self, i1, i2, j):
-    #     coef = -self.left_values[i1][j] / self.left_values[i2][j]
-    #     self.right_values[i2][0] = self.right_values[i2][0] * coef + self.right_values[i1][0]
-    #     for i in range(j, len(self.left_values)):
-    #         self.left_values[i2][i] = self.left_values[i2][i] * coef + self.left_values[i1][i]
+        res[len(self.left_values) - 1][0] = self.right_values[len(self.left_values) - 1][0] / self.left_values[len(self.left_values) - 1][len(self.left_values) - 1]
+
+        for i in range(len(self.left_values) - 2, -1, -1):
+            for j in range(i + 1, len(self.left_values)):
+                self.right_values[i][0] -= self.left_values[i][j] * res[j][0]
+            res[i][0] = self.right_values[i][0] / self.left_values[i][i]
+        return res
+
+
+    # Приводим строку с индексом i2 к нулям с индекса j складывая со строкой i1 с коефициентом
+    def make_zero_started_string(self, i1, i2, j):
+        coef = -self.left_values[i1][j] / self.left_values[i2][j]
+        self.right_values[i2][0] = self.right_values[i2][0] * coef + self.right_values[i1][0]
+        for i in range(j, len(self.left_values)):
+            self.left_values[i2][i] = self.left_values[i2][i] * coef + self.left_values[i1][i]
 
     # Получаем матрицу, состающую из левой, в которой на место столбца index поставлена правая матрица
     def get_matrix_for_kramer(self, index):
@@ -278,7 +285,6 @@ class MainWidget(QWidget):
         for i in range(len(lst)):
             for j in range(len(lst[0])):
                 table.setItem(i, j, QTableWidgetItem("{:10.4f}".format(lst[i][j])))
-
 
     def get_element_list_from_table(self, table):
         lst = list()
