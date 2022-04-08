@@ -98,9 +98,13 @@ class MainWidget(QWidget):  # класс виджета (view + controller)
         self.link_to_github.move(2 * PADDING + ELEMENT_SIZE.width(),
                                  WINDOW_SIZE.height() - PADDING - ELEMENT_SIZE.height())
 
-    def set_only_numeric_input_to_tables(self):
+    def set_only_numeric_input_to_tables(self):  # Запрет на ввод не цифр
         self.delegate_numeric_to_table(self.table_left_values)
         self.delegate_numeric_to_table(self.table_right_values)
+
+    def delegate_numeric_to_table(self, table):
+        delegate = NumericDelegate(table)
+        table.setItemDelegate(delegate)
 
     # запрет на изменение таблицы с результатом
     def set_only_read_mode_to_table(self, table):
@@ -108,7 +112,7 @@ class MainWidget(QWidget):  # класс виджета (view + controller)
 
     def set_listeners(self):
         # лямбда функция используется для того, чтобы привязать другую функцию на нажатие
-        self.number_of_cols_spinner.valueChanged.connect(lambda x: self.change_number_of_cols(x))
+        self.number_of_cols_spinner.valueChanged.connect(lambda x: self.set_size_of_all_tables(x))
         self.run_button.clicked.connect(self.on_run)
         self.link_to_documentation.clicked.connect(lambda: self.redirect_to_website("https://doc.qt.io/qtforpython-5/"))
         self.link_to_github.clicked.connect(
@@ -117,7 +121,7 @@ class MainWidget(QWidget):  # класс виджета (view + controller)
     def redirect_to_website(self, url):
         webbrowser.open(url)
 
-    def change_number_of_cols(self, number):  # установить размеры всех таблиц
+    def set_size_of_all_tables(self, number):  # установить размеры всех таблиц
         self.set_sizes_of_table(self.table_left_values, number, number)
         self.set_sizes_of_table(self.table_right_values, number, 1)
         self.set_sizes_of_table(self.table_result, number, 1)
@@ -128,7 +132,9 @@ class MainWidget(QWidget):  # класс виджета (view + controller)
 
     # Запустить решение с выбранным методом
     def on_run(self):
-        self.fill_nulls_cells_for_zeroes()
+        self.fill_nulls_cells_for_zeroes()  # заполняем нулями пустые ячейки
+
+        # получаем данные из таблиц
         left_values = self.get_element_list_from_table(self.table_left_values)
         right_values = self.get_element_list_from_table(self.table_right_values)
 
@@ -138,7 +144,7 @@ class MainWidget(QWidget):  # класс виджета (view + controller)
 
         m_solver = MatrixSolver.MatrixSolver(left_values, right_values)
 
-        match self.run_mode_setter.currentIndex():  # Python с версии 3.9 поддерживает switch-case блоки
+        match self.run_mode_setter.currentIndex():  # (Python с версии 3.9 поддерживает switch-case блоки)
             case 0:
                 result_values = m_solver.solve_for_opposite_matrix_method()
             case 1:
@@ -173,10 +179,6 @@ class MainWidget(QWidget):  # класс виджета (view + controller)
                 sub_lst.append(float(table.item(i, j).text()))
             lst.append(sub_lst)
         return lst
-
-    def delegate_numeric_to_table(self, table):
-        delegate = NumericDelegate(table)
-        table.setItemDelegate(delegate)
 
 
 class NumericDelegate(QStyledItemDelegate):
