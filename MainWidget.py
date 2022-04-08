@@ -39,7 +39,7 @@ class MainWidget(QWidget):  # класс виджета (view + controller)
     def set_ui_and_listeners(self):
         self.init_ui()
         self.set_listeners()
-        self.number_of_cols_spinner.setMinimum(2)
+
         self.set_only_read_mode_to_table(self.table_result)
         self.set_only_numeric_input_to_tables()
 
@@ -58,6 +58,7 @@ class MainWidget(QWidget):  # класс виджета (view + controller)
         self.number_of_cols_spinner.setFont(self.font)
         self.number_of_cols_spinner.resize(ELEMENT_SIZE)
         self.number_of_cols_spinner.move(2 * PADDING + ELEMENT_SIZE.width(), PADDING)
+        self.number_of_cols_spinner.setMinimum(2)
 
         # Таблица под правые значения
         self.table_left_values.resize(INPUT_CONTAINER_SIZE)
@@ -154,21 +155,15 @@ class MainWidget(QWidget):  # класс виджета (view + controller)
 
         self.put_elements_to_table_from_list(self.table_result, result_values)
 
-    def check_table_for_empty_cells_and_fill_them_with_zeroes(self, table):  # пустые ячейки заполяем нулями
+    def fill_nulls_cells_for_zeroes(self):
+        self.fill_empty_cells_with_zeroes(self.table_left_values)
+        self.fill_empty_cells_with_zeroes(self.table_right_values)
+
+    def fill_empty_cells_with_zeroes(self, table):  # пустые ячейки заполяем нулями
         for i in range(table.rowCount()):
             for j in range(table.columnCount()):
                 if not (table.item(i, j) is not None) or not (table.item(i, j).text() != ''):
                     table.setItem(i, j, QTableWidgetItem("0"))
-
-    def fill_nulls_cells_for_zeroes(self):
-        self.check_table_for_empty_cells_and_fill_them_with_zeroes(self.table_left_values)
-        self.check_table_for_empty_cells_and_fill_them_with_zeroes(self.table_right_values)
-
-    # Записать данные в QTableWidget
-    def put_elements_to_table_from_list(self, table, lst):
-        for i in range(len(lst)):
-            for j in range(len(lst[0])):
-                table.setItem(i, j, QTableWidgetItem("{:10.4f}".format(lst[i][j])))
 
     # Получить данные из QTableWidget
     def get_element_list_from_table(self, table):
@@ -179,6 +174,12 @@ class MainWidget(QWidget):  # класс виджета (view + controller)
                 sub_lst.append(float(table.item(i, j).text()))
             lst.append(sub_lst)
         return lst
+
+    # Записать данные в QTableWidget
+    def put_elements_to_table_from_list(self, table, lst):
+        for i in range(len(lst)):
+            for j in range(len(lst[0])):
+                table.setItem(i, j, QTableWidgetItem("{:10.4f}".format(lst[i][j])))
 
 
 class NumericDelegate(QStyledItemDelegate):

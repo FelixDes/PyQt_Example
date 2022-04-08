@@ -1,6 +1,4 @@
 class MatrixSolver:  # Класс для выполнения математических операций (model)
-    left_values = list()
-    right_values = list()
 
     def __init__(self, left_values, right_values):
         self.left_values = left_values
