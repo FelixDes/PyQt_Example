@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QApplication
 import MainWidget
 
 
-def main():
+def main():  # инициализация и отрисовка окна приложения
     app = QApplication(sys.argv)
     ex = MainWidget.MainWidget()
     ex.show()

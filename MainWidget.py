@@ -1,8 +1,8 @@
 from PyQt5 import QtGui
 from PyQt5.QtCore import QSize, QRegExp
 from PyQt5.QtGui import QRegExpValidator
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QSpinBox, \
-    QTableWidget, QComboBox, QStyledItemDelegate, QLineEdit, QTableWidgetItem, QDialog
+from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QSpinBox, \
+    QTableWidget, QComboBox, QStyledItemDelegate, QLineEdit, QTableWidgetItem
 
 import webbrowser
 
@@ -18,10 +18,10 @@ INPUT_CONTAINER_SIZE = QSize(WINDOW_SIZE.width() // 2 - 2 * PADDING, 325)
 RUN_MODES = ["Обратная матрица", "Крамер", "Гаусс"]
 
 
-class MainWidget(QWidget):
+class MainWidget(QWidget):  # класс виджета (view + controller)
     font = QtGui.QFont("ttf", 16)  # устанавливаем шрифт
 
-    def __init__(self):
+    def __init__(self):  # конструктор
         super().__init__()
         # инициализация графических элементов
         self.number_of_cols_label = QLabel(self)
@@ -34,9 +34,9 @@ class MainWidget(QWidget):
         self.table_right_values = QTableWidget(self)
         self.table_result = QTableWidget(self)
 
-        self.set_ui_and_Listeners()
+        self.set_ui_and_listeners()
 
-    def set_ui_and_Listeners(self):
+    def set_ui_and_listeners(self):
         self.init_ui()
         self.set_listeners()
         self.number_of_cols_spinner.setMinimum(2)
@@ -51,8 +51,8 @@ class MainWidget(QWidget):
         # Поле под кол-во строк/столбцов
         self.number_of_cols_label.setFont(self.font)
         self.number_of_cols_label.setText("Размер:")
-        self.number_of_cols_label.resize(ELEMENT_SIZE)
-        self.number_of_cols_label.move(PADDING, PADDING)
+        self.number_of_cols_label.resize(ELEMENT_SIZE)  # изменить размер
+        self.number_of_cols_label.move(PADDING, PADDING)  # переместить на экране
 
         # Спиннер под установки размеров
         self.number_of_cols_spinner.setFont(self.font)
@@ -99,14 +99,15 @@ class MainWidget(QWidget):
                                  WINDOW_SIZE.height() - PADDING - ELEMENT_SIZE.height())
 
     def set_only_numeric_input_to_tables(self):
-        delegate_numeric_to_table(self.table_left_values)
-        delegate_numeric_to_table(self.table_right_values)
+        self.delegate_numeric_to_table(self.table_left_values)
+        self.delegate_numeric_to_table(self.table_right_values)
 
     # запрет на изменение таблицы с результатом
     def set_only_read_mode_to_table(self, table):
         table.setEditTriggers(QTableWidget.NoEditTriggers)
 
     def set_listeners(self):
+        # лямбда функция используется для того, чтобы привязать другую функцию на нажатие
         self.number_of_cols_spinner.valueChanged.connect(lambda x: self.change_number_of_cols(x))
         self.run_button.clicked.connect(self.on_run)
         self.link_to_documentation.clicked.connect(lambda: self.redirect_to_website("https://doc.qt.io/qtforpython-5/"))
@@ -116,12 +117,12 @@ class MainWidget(QWidget):
     def redirect_to_website(self, url):
         webbrowser.open(url)
 
-    def change_number_of_cols(self, number):
+    def change_number_of_cols(self, number):  # установить размеры всех таблиц
         self.set_sizes_of_table(self.table_left_values, number, number)
         self.set_sizes_of_table(self.table_right_values, number, 1)
         self.set_sizes_of_table(self.table_result, number, 1)
 
-    def set_sizes_of_table(self, table, row, column):
+    def set_sizes_of_table(self, table, row, column):  # установить размер конкретной таблицы
         table.setRowCount(row)
         table.setColumnCount(column)
 
@@ -137,7 +138,7 @@ class MainWidget(QWidget):
 
         m_solver = MatrixSolver.MatrixSolver(left_values, right_values)
 
-        match self.run_mode_setter.currentIndex():
+        match self.run_mode_setter.currentIndex():  # Python с версии 3.9 поддерживает switch-case блоки
             case 0:
                 result_values = m_solver.solve_for_opposite_matrix_method()
             case 1:
@@ -147,7 +148,7 @@ class MainWidget(QWidget):
 
         self.put_elements_to_table_from_list(self.table_result, result_values)
 
-    def check_table_for_empty_cells_and_fill_them_with_zeroes(self, table):
+    def check_table_for_empty_cells_and_fill_them_with_zeroes(self, table):  # пустые ячейки заполяем нулями
         for i in range(table.rowCount()):
             for j in range(table.columnCount()):
                 if not (table.item(i, j) is not None) or not (table.item(i, j).text() != ''):
@@ -173,6 +174,10 @@ class MainWidget(QWidget):
             lst.append(sub_lst)
         return lst
 
+    def delegate_numeric_to_table(self, table):
+        delegate = NumericDelegate(table)
+        table.setItemDelegate(delegate)
+
 
 class NumericDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
@@ -182,8 +187,3 @@ class NumericDelegate(QStyledItemDelegate):
             validator = QRegExpValidator(reg_ex, editor)
             editor.setValidator(validator)
         return editor
-
-
-def delegate_numeric_to_table(table):
-    delegate = NumericDelegate(table)
-    table.setItemDelegate(delegate)

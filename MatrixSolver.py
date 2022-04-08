@@ -1,5 +1,5 @@
-class MatrixSolver:  # Класс для выполнения математических операций
-    left_values = list(list())
+class MatrixSolver:  # Класс для выполнения математических операций (model)
+    left_values = list()
     right_values = list()
 
     def __init__(self, left_values, right_values):
@@ -22,8 +22,7 @@ class MatrixSolver:  # Класс для выполнения математич
             lst.append([self.get_det(self.get_matrix_for_kramer(i)) / det])
         return lst
 
-        # Получаем матрицу, состающую из левой, в которой на место столбца index поставлена правая матрица
-
+    # Получаем матрицу, состающую из левой, в которой на место столбца index поставлена правая матрица
     def get_matrix_for_kramer(self, index):
         lst = list(list())
         for i in range(len(self.left_values)):
